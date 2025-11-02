@@ -1,0 +1,105 @@
+2025-11-01 16:02:19.067 | INFO     | __main__:main:14 - 🏁 Pipeline v2 started
+2025-11-01 16:02:21.118 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:02:21.532 | INFO     | src.fetch_data:fetch_tf_yf:51 - yfinance fetch %s %s period=%s
+2025-11-01 16:02:22.235 | INFO     | src.utils.file_utils:save_df_csv:14 - Saved CSV → %s (rows=%d cols=%d)
+2025-11-01 16:02:22.239 | INFO     | src.fetch_data:fetch_multi_timeframes:131 - Fetched %s rows for %s
+2025-11-01 16:02:22.687 | INFO     | src.utils.file_utils:save_df_csv:14 - Saved CSV → %s (rows=%d cols=%d)
+2025-11-01 16:02:22.689 | INFO     | src.fetch_data:fetch_multi_timeframes:131 - Fetched %s rows for %s
+2025-11-01 16:02:23.236 | INFO     | src.utils.file_utils:save_df_csv:14 - Saved CSV → %s (rows=%d cols=%d)
+2025-11-01 16:02:23.239 | INFO     | src.fetch_data:fetch_multi_timeframes:131 - Fetched %s rows for %s
+2025-11-01 16:02:23.724 | INFO     | src.utils.file_utils:save_df_csv:14 - Saved CSV → %s (rows=%d cols=%d)
+2025-11-01 16:02:23.726 | INFO     | src.fetch_data:fetch_multi_timeframes:131 - Fetched %s rows for %s
+2025-11-01 16:02:25.293 | ERROR    | src.fetch_data:fetch_timeframe:104 - No provider returned data for %s %s
+2025-11-01 16:02:25.294 | WARNING  | src.fetch_data:fetch_multi_timeframes:118 - No data for tf=%s
+2025-11-01 16:02:25.650 | INFO     | src.utils.file_utils:save_df_csv:14 - Saved CSV → %s (rows=%d cols=%d)
+2025-11-01 16:02:25.650 | SUCCESS  | src.process_data:process_and_save:52 - Saved merged processed -> %s (rows=%d cols=%d)
+2025-11-01 16:02:26.542 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:02:27.871 | SUCCESS  | src.train_model:train_xgb:40 - Trained XGB saved (%s). Test acc: %.4f
+2025-11-01 16:02:29.249 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:02:29.283 | ERROR    | __main__:main:47 - Prediction failed: %s
+Traceback (most recent call last):
+
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+
+  File "/Users/taufeeq/Desktop/ai-gold-trader-v2/ai-gold-trader-v2/src/run_pipeline.py", line 57, in <module>
+    main()
+    └ <function main at 0x103471d00>
+
+> File "/Users/taufeeq/Desktop/ai-gold-trader-v2/ai-gold-trader-v2/src/run_pipeline.py", line 43, in main
+    res = predict_latest()
+          └ <function predict_latest at 0x1116a7b00>
+
+  File "/Users/taufeeq/Desktop/ai-gold-trader-v2/ai-gold-trader-v2/src/predict.py", line 26, in predict_latest
+    if not (os.path.exists(model_path) and os.path.exists(scaler_path)):
+                           │                              └ 'models/scaler.joblib'
+                           └ 'models/xgb_model.joblib'
+
+NameError: name 'os' is not defined
+2025-11-01 16:02:30.162 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:02:32.227 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:02:32.230 | INFO     | __main__:main:54 - Pipeline completed
+2025-11-01 16:04:45.483 | INFO     | __main__:main:14 - 🏁 Pipeline v2 started
+2025-11-01 16:04:46.322 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:04:46.355 | INFO     | src.fetch_data:fetch_timeframe:68 - Using cached raw %s
+2025-11-01 16:04:46.363 | INFO     | src.fetch_data:fetch_multi_timeframes:131 - Fetched %s rows for %s
+2025-11-01 16:04:46.368 | INFO     | src.fetch_data:fetch_timeframe:68 - Using cached raw %s
+2025-11-01 16:04:46.374 | INFO     | src.fetch_data:fetch_multi_timeframes:131 - Fetched %s rows for %s
+2025-11-01 16:04:46.375 | INFO     | src.fetch_data:fetch_timeframe:68 - Using cached raw %s
+2025-11-01 16:04:46.378 | INFO     | src.fetch_data:fetch_multi_timeframes:131 - Fetched %s rows for %s
+2025-11-01 16:04:46.387 | INFO     | src.fetch_data:fetch_timeframe:68 - Using cached raw %s
+2025-11-01 16:04:46.390 | INFO     | src.fetch_data:fetch_multi_timeframes:131 - Fetched %s rows for %s
+2025-11-01 16:04:46.750 | INFO     | src.fetch_data:fetch_tf_yf:51 - yfinance fetch %s %s period=%s
+2025-11-01 16:04:50.291 | ERROR    | src.fetch_data:fetch_timeframe:104 - No provider returned data for %s %s
+2025-11-01 16:04:50.292 | WARNING  | src.fetch_data:fetch_multi_timeframes:118 - No data for tf=%s
+2025-11-01 16:04:50.740 | INFO     | src.utils.file_utils:save_df_csv:14 - Saved CSV → %s (rows=%d cols=%d)
+2025-11-01 16:04:50.741 | SUCCESS  | src.process_data:process_and_save:52 - Saved merged processed -> %s (rows=%d cols=%d)
+2025-11-01 16:04:51.589 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:04:53.128 | SUCCESS  | src.train_model:train_xgb:40 - Trained XGB saved (%s). Test acc: %.4f
+2025-11-01 16:04:53.952 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:04:54.000 | INFO     | src.predict:predict_latest:40 - Model predicts: %s (conf %.3f)
+2025-11-01 16:04:54.850 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:04:56.272 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:04:56.274 | INFO     | __main__:main:54 - Pipeline completed
+2025-11-01 16:18:05.114 | INFO     | __main__:main:14 - 🏁 Pipeline v2 started
+2025-11-01 16:18:05.935 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:18:05.977 | INFO     | src.fetch_data:fetch_timeframe:79 - Using cached raw data/raw/XAUUSD_30m.csv
+2025-11-01 16:18:05.977 | INFO     | src.fetch_data:fetch_timeframe:79 - Using cached raw data/raw/XAUUSD_15m.csv
+2025-11-01 16:18:05.978 | INFO     | src.fetch_data:fetch_timeframe:79 - Using cached raw data/raw/XAUUSD_1h.csv
+2025-11-01 16:18:05.987 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 30m
+2025-11-01 16:18:05.991 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 15m
+2025-11-01 16:18:05.995 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 1h
+2025-11-01 16:18:06.001 | INFO     | src.fetch_data:fetch_timeframe:79 - Using cached raw data/raw/XAUUSD_4h.csv
+2025-11-01 16:18:06.005 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 4h
+2025-11-01 16:18:06.529 | INFO     | src.utils.file_utils:save_df_csv:14 - Saved CSV → %s (rows=%d cols=%d)
+2025-11-01 16:18:06.532 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 5m
+2025-11-01 16:18:07.045 | INFO     | src.utils.file_utils:save_df_csv:14 - Saved CSV → %s (rows=%d cols=%d)
+2025-11-01 16:18:07.045 | SUCCESS  | src.process_data:process_and_save:52 - Saved merged processed -> %s (rows=%d cols=%d)
+2025-11-01 16:18:07.900 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:18:09.542 | SUCCESS  | src.train_model:train_xgb:40 - Trained XGB saved (%s). Test acc: %.4f
+2025-11-01 16:18:11.141 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:18:11.236 | INFO     | src.predict:predict_latest:40 - Model predicts: %s (conf %.3f)
+2025-11-01 16:18:12.364 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:18:14.086 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:18:14.089 | INFO     | __main__:main:54 - Pipeline completed
+2025-11-01 16:22:36.029 | INFO     | __main__:main:14 - 🏁 Pipeline v2 started
+2025-11-01 16:22:39.338 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:22:39.385 | INFO     | src.fetch_data:fetch_timeframe:79 - Using cached raw data/raw/XAUUSD_30m.csv
+2025-11-01 16:22:39.385 | INFO     | src.fetch_data:fetch_timeframe:79 - Using cached raw data/raw/XAUUSD_15m.csv
+2025-11-01 16:22:39.386 | INFO     | src.fetch_data:fetch_timeframe:79 - Using cached raw data/raw/XAUUSD_1h.csv
+2025-11-01 16:22:39.394 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 30m
+2025-11-01 16:22:39.395 | INFO     | src.fetch_data:fetch_timeframe:79 - Using cached raw data/raw/XAUUSD_5m.csv
+2025-11-01 16:22:39.398 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 15m
+2025-11-01 16:22:39.401 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 1h
+2025-11-01 16:22:39.404 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 5m
+2025-11-01 16:22:39.409 | INFO     | src.fetch_data:fetch_timeframe:79 - Using cached raw data/raw/XAUUSD_4h.csv
+2025-11-01 16:22:39.411 | INFO     | src.fetch_data:fetch_multi_timeframes:139 - Fetched 2000 rows for 4h
+2025-11-01 16:22:39.941 | INFO     | src.utils.file_utils:save_df_csv:14 - Saved CSV → %s (rows=%d cols=%d)
+2025-11-01 16:22:39.941 | SUCCESS  | src.process_data:process_and_save:52 - Saved merged processed -> %s (rows=%d cols=%d)
+2025-11-01 16:22:40.818 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:22:42.541 | SUCCESS  | src.train_model:train_xgb:40 - Trained XGB saved (%s). Test acc: %.4f
+2025-11-01 16:22:43.344 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:22:43.396 | INFO     | src.predict:predict_latest:40 - Model predicts: %s (conf %.3f)
+2025-11-01 16:22:44.226 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:22:45.344 | SUCCESS  | src.utils.notify:send_telegram_message:17 - Telegram message sent.
+2025-11-01 16:22:45.349 | INFO     | __main__:main:54 - Pipeline completed
