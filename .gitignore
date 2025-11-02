@@ -22,3 +22,24 @@ data/predictions/
 
 # System files
 .DS_Store
+# Data
+data/raw/
+data/predictions/
+data/models/
+
+# Cache and logs
+__pycache__/
+*.log
+
+# Environment & secrets
+.env
+*.env
+
+# Jupyter or temp
+.ipynb_checkpoints/
+.DS_Store
+
+# Compiled
+*.pyc
+*.pyo
+*.pyd
