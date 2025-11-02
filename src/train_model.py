@@ -34,13 +34,17 @@ def train_xgb(data: pd.DataFrame = None, model_params: dict = None):
 
     # --- Model parameters ---
     if model_params is None:
-        model_params = {
-            "n_estimators": 300,
-            "max_depth": 7,
-            "learning_rate": 0.05,
-            "use_label_encoder": False,
-            "eval_metric": "logloss",
-        }
+       model_params = {
+    "n_estimators": 300,
+    "max_depth": 7,
+    "learning_rate": 0.05,
+    "objective": "binary:logistic",
+    "base_score": 0.5,
+    "eval_metric": "logloss",
+    "use_label_encoder": False,
+    "tree_method": "hist",
+}
+
 
     # --- Create target ---
     ret_cols = [c for c in data.columns if c.startswith("ret1")]

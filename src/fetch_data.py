@@ -15,7 +15,7 @@ load_dotenv()
 # =========================
 TV_AVAILABLE = False
 try:
-    from tvDatafeed import TvDatafeed, Interval
+    from src.tvdatafeed.tvdatafeed import TvDatafeed, Interval
     TV_USER = os.getenv("TV_USER")
     TV_PASS = os.getenv("TV_PASS")
     if TV_USER and TV_PASS:

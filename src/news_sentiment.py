@@ -6,16 +6,16 @@ from loguru import logger
 from transformers import pipeline
 
 # ─────────────────────────────────────────────
-# Load Config
+# Configuration
 # ─────────────────────────────────────────────
-KEYWORDS = [k.strip().lower() for k in os.getenv("NEWS_KEYWORDS", "gold,xauusd,usd,inflation,cpi,fomc,powell").split(",")]
+KEYWORDS = [k.strip().lower() for k in os.getenv(
+    "NEWS_KEYWORDS", "gold,xauusd,usd,inflation,cpi,fomc,powell"
+).split(",")]
+
 LOOKBACK_HOURS = int(os.getenv("NEWS_LOOKBACK_HOURS", 12))
 USE_TRANSFORMER = os.getenv("USE_TRANSFORMER_FOR_NEWS", "false").lower() == "true"
 MODEL_NAME = os.getenv("TRANSFORMER_MODEL_NAME", "distilbert-base-uncased-finetuned-sst-2-english")
 
-# ─────────────────────────────────────────────
-# News Sources
-# ─────────────────────────────────────────────
 NEWS_FEEDS = {
     "TradingView": "https://www.tradingview.com/news/rss/",
     "Investing.com": "https://www.investing.com/rss/news_301.rss",
@@ -26,13 +26,18 @@ NEWS_FEEDS = {
 # ─────────────────────────────────────────────
 # Utilities
 # ─────────────────────────────────────────────
-def clean_html(raw_html: str):
-    soup = BeautifulSoup(raw_html, "html.parser")
-    return soup.get_text().strip()
+def clean_html(raw_html: str) -> str:
+    """Strip HTML tags from text safely."""
+    try:
+        soup = BeautifulSoup(raw_html, "html.parser")
+        return soup.get_text().strip()
+    except Exception:
+        return raw_html
 
 
-def fetch_recent_news(hours: int = LOOKBACK_HOURS):
-    """Fetch and clean news headlines from multiple feeds."""
+def fetch_recent_news(keywords=None, hours: int = LOOKBACK_HOURS):
+    """Fetch and clean news headlines from multiple RSS feeds."""
+    keywords = [k.lower() for k in (keywords or KEYWORDS)]
     news_items = []
     cutoff = datetime.utcnow() - timedelta(hours=hours)
 
@@ -43,14 +48,15 @@ def fetch_recent_news(hours: int = LOOKBACK_HOURS):
                 title = clean_html(entry.get("title", ""))
                 summary = clean_html(entry.get("summary", ""))
                 link = entry.get("link", "")
-                published = entry.get("published_parsed", None)
+                published = entry.get("published_parsed")
 
                 if published:
                     published_dt = datetime(*published[:6])
                     if published_dt < cutoff:
                         continue
 
-                if not any(k in (title + summary).lower() for k in KEYWORDS):
+                # Match any keyword
+                if not any(k in (title + summary).lower() for k in keywords):
                     continue
 
                 news_items.append({
@@ -66,34 +72,37 @@ def fetch_recent_news(hours: int = LOOKBACK_HOURS):
     return news_items
 
 
-def analyze_sentiment(texts):
-    """Use Transformer or keyword-based scoring."""
+def analyze_sentiment(texts, use_transformer: bool = USE_TRANSFORMER):
+    """Analyze sentiment using Transformer or keyword scoring."""
     if not texts:
         return []
 
-    if USE_TRANSFORMER:
+    if use_transformer:
         try:
             sentiment_model = pipeline("sentiment-analysis", model=MODEL_NAME)
             return sentiment_model(texts)
         except Exception as e:
-            logger.warning(f"⚠️ Transformer analysis failed: {e}")
+            logger.warning(f"⚠️ Transformer analysis failed, falling back to keyword scoring: {e}")
 
-    # Simple fallback: keyword scoring
+    # Keyword-based sentiment fallback
     positive_words = ["rise", "gain", "optimism", "bullish", "increase", "surge", "boost"]
     negative_words = ["fall", "drop", "bearish", "decline", "weakness", "slump", "fear"]
 
-    def get_score(t):
-        t = t.lower()
-        score = sum(w in t for w in positive_words) - sum(w in t for w in negative_words)
-        return {"label": "POSITIVE" if score > 0 else "NEGATIVE" if score < 0 else "NEUTRAL", "score": abs(score) / 3.0}
+    def score_text(text: str):
+        text = text.lower()
+        score = sum(w in text for w in positive_words) - sum(w in text for w in negative_words)
+        return {
+            "label": "POSITIVE" if score > 0 else "NEGATIVE" if score < 0 else "NEUTRAL",
+            "score": abs(score) / 3.0
+        }
 
-    return [get_score(txt) for txt in texts]
+    return [score_text(t) for t in texts]
 
 
 def summarize_sentiment(news_items):
-    """Compute average sentiment and summary text."""
+    """Compute average sentiment and label summary."""
     if not news_items:
-        return {"avg_score": 0.0, "label": "Neutral", "raw_count": 0, "breakdown": {"details": []}}
+        return {"avg_score": 0.0, "label": "⚪ Neutral", "raw_count": 0, "breakdown": {"details": []}}
 
     texts = [f"{n['title']} {n['summary']}" for n in news_items]
     results = analyze_sentiment(texts)
@@ -116,7 +125,7 @@ def summarize_sentiment(news_items):
         "avg_score": avg,
         "label": mood,
         "raw_count": len(news_items),
-        "breakdown": {"details": analyzed}
+        "breakdown": {"details": analyzed},
     }
 
 
