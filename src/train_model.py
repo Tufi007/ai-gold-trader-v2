@@ -1,89 +1,86 @@
-import os
-import joblib
+# src/train_model.py
 import pandas as pd
 import numpy as np
 from loguru import logger
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
+import joblib
 from src.utils.file_utils import model_paths
-from src.utils.config import PROCESSED_DIR
+from src.utils.config import MODELS_DIR
 
-
-def train_xgb(data: pd.DataFrame = None, model_params: dict = None):
+def train_xgb(df: pd.DataFrame, force_retrain=False):
     """
     Train an XGBoost model on processed data.
-
-    Args:
-        data (pd.DataFrame, optional): Preprocessed dataframe. If None, loads from file.
-        model_params (dict, optional): Hyperparameters for XGBClassifier.
-
-    Returns:
-        dict: Paths to saved model and scaler, plus test accuracy.
+    Automatically skips empty or invalid datasets.
     """
-    # --- Load data if not provided ---
-    if data is None:
-        path = os.path.join(PROCESSED_DIR, "merged_all_timeframes.csv")
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Processed file not found: {path}")
-        data = pd.read_csv(path, index_col=0)
-        logger.info(f"📂 Loaded processed data from {path}")
+    logger.info("🤖 Starting XGBoost training...")
 
-    if data.empty:
-        raise RuntimeError("❌ Processed data is empty, cannot train model")
+    # Ensure target exists
+    if "target" not in df.columns:
+        logger.error("❌ 'target' column missing in processed data.")
+        return None
 
-    # --- Model parameters ---
-    if model_params is None:
-       model_params = {
-    "n_estimators": 300,
-    "max_depth": 7,
-    "learning_rate": 0.05,
-    "objective": "binary:logistic",
-    "base_score": 0.5,
-    "eval_metric": "logloss",
-    "use_label_encoder": False,
-    "tree_method": "hist",
-}
+    # Drop NaNs
+    df = df.dropna()
+    if df.empty:
+        logger.error("❌ Processed DataFrame is empty after dropping NaNs. Skipping training.")
+        return None
 
+    # Split features/target
+    X = df.drop(columns=["target"])
+    y = df["target"]
 
-    # --- Create target ---
-    ret_cols = [c for c in data.columns if c.startswith("ret1")]
-    if not ret_cols:
-        raise RuntimeError("❌ No 'ret1' columns found for labeling")
+    # Filter numeric only (non-numeric cause issues in sklearn)
+    X = X.select_dtypes(include=[np.number])
+    if X.empty:
+        logger.error("❌ No numeric columns available for training.")
+        return None
 
-    data["target"] = (data[ret_cols[0]].shift(-1) > 0).astype(int)
-    data.dropna(inplace=True)
+    # Drop constant columns
+    nunique = X.nunique()
+    X = X.loc[:, nunique > 1]
 
-    X = data.drop(columns=["target"])
-    y = data["target"]
+    if X.empty:
+        logger.error("❌ All features constant or invalid — nothing to train.")
+        return None
 
-    # --- Handle missing values ---
-    if X.isnull().values.any():
-        logger.warning("⚠️ Missing values detected — filling with column means.")
-        X = X.fillna(X.mean())
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # --- Scale features (keep column names) ---
+    # Scale
     scaler = StandardScaler()
-    scaler.fit(X)
-    X_scaled = pd.DataFrame(scaler.transform(X), columns=X.columns, index=X.index)
+    try:
+        X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns, index=X.index)
+    except ValueError as e:
+        logger.error(f"❌ Scaling failed: {e}")
+        return None
 
-    # --- Split ---
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.15, shuffle=False)
-    logger.info(f"🧩 Training shape: {X_train.shape}, Testing shape: {X_test.shape}")
+    # Initialize model
+    model = XGBClassifier(
+        n_estimators=200,
+        learning_rate=0.05,
+        max_depth=6,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        tree_method="hist",
+        random_state=42,
+        n_jobs=-1
+    )
 
-    # --- Train model ---
-    model = XGBClassifier(**model_params)
-    model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
+    # Train
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+    acc = accuracy_score(y_test, preds)
 
-    # --- Save model & scaler ---
+    logger.success(f"✅ XGB trained successfully! Accuracy = {acc:.4f}")
+
+    # Save model + scaler
     paths = model_paths()
     joblib.dump(model, paths["model"])
     joblib.dump(scaler, paths["scaler"])
+    logger.success(f"💾 Saved model → {paths['model']}")
+    logger.success(f"💾 Saved scaler → {paths['scaler']}")
 
-    # --- Evaluate ---
-    score = model.score(X_test, y_test)
-    logger.success(f"✅ XGB model trained. Accuracy: {score:.4f}")
-    logger.info(f"📁 Model saved to {paths['model']}")
-    logger.info(f"📁 Scaler saved to {paths['scaler']}")
-
-    return {"model": paths["model"], "scaler": paths["scaler"], "accuracy": float(score)}
+    return {"acc": acc, "model_path": paths["model"], "scaler_path": paths["scaler"]}

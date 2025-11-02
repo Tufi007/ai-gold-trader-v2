@@ -1,78 +1,77 @@
+# src/predict.py
 import os
-import pandas as pd
 import joblib
+import pandas as pd
+import numpy as np
 from loguru import logger
-from pathlib import Path
+from src.utils.file_utils import model_paths
+from src.utils.config import PREDICTIONS_DIR
 
+def load_models(paths: dict):
+    models = {}
+    try:
+        models['xgb'] = joblib.load(paths['model'])
+        logger.info("✅ Loaded XGBoost model")
+    except Exception as e:
+        logger.warning(f"XGB load failed: {e}")
 
-def load_model_assets(model_info: dict):
+    # placeholder for LSTM / torch model (optional)
+    # if os.path.exists(paths.get('lstm')):
+    #    load model
+
+    return models
+
+def predict_multi_timeframes(paths: dict, processed_df: pd.DataFrame):
     """
-    Load trained model and scaler from disk or from model_info dict.
+    Accepts processed df and returns a merged DataFrame with:
+    - original OHLC columns (close/high/low)
+    - model outputs: prob_pos, pred_label
     """
-    model = model_info.get("model")
-    scaler = model_info.get("scaler")
+    if processed_df is None or processed_df.empty:
+        raise RuntimeError("No processed data provided for prediction")
 
-    # Load from file paths if not in-memory
-    if isinstance(model, str) and Path(model).exists():
-        model = joblib.load(model)
-    if isinstance(scaler, str) and Path(scaler).exists():
-        scaler = joblib.load(scaler)
+    models = load_models(paths)
+    xgb = models.get('xgb')
 
-    if model is None or scaler is None:
-        raise ValueError("❌ Model or scaler missing — cannot proceed with prediction.")
+    X = processed_df.copy()
+    # remove target if exists
+    for col in ['target']:
+        if col in X.columns:
+            X = X.drop(columns=[col])
 
-    return model, scaler
-
-
-def predict_multi_timeframes(model_info, processed_data):
-    """
-    Predict across multiple timeframes or a single merged dataframe.
-    Supports flexible input types for production stability.
-    """
-
-    logger.info("🔮 Starting predictions across timeframes...")
-
-    # Load trained model and scaler
-    model, scaler = load_model_assets(model_info)
-
-    # Handle both single-DF or dict-of-DFs
-    if isinstance(processed_data, pd.DataFrame):
-        data_dict = {"merged": processed_data}
-    elif isinstance(processed_data, dict):
-        data_dict = processed_data
+    # --- compute XGB preds if available
+    preds_df = X.copy()
+    if xgb is not None:
+        try:
+            probs = xgb.predict_proba(X)[:, 1]
+            preds_df['prob_pos'] = probs
+            preds_df['pred_label'] = (probs >= 0.5).astype(int)
+            logger.info(f"✅ XGB predictions computed ({len(probs)} rows)")
+        except Exception as e:
+            logger.exception(f"XGB prediction failed: {e}")
+            preds_df['prob_pos'] = 0.5
+            preds_df['pred_label'] = 0
     else:
-        raise TypeError("❌ processed_data must be DataFrame or dict of DataFrames.")
+        preds_df['prob_pos'] = 0.5
+        preds_df['pred_label'] = 0
 
-    predictions = {}
+    # --- ensemble placeholder: if other model exists, combine them
+    # For now, we just ensure prob_pos in 0..1
+    preds_df['prob_pos'] = preds_df['prob_pos'].clip(0.0, 1.0)
 
-    for tf, df in data_dict.items():
-        if df.empty:
-            logger.warning(f"⚠️ Skipping empty dataframe for {tf}.")
-            continue
+    # --- ensure OHLC present: try to restore from processed_df if missing
+    for c in ['open','high','low','close','volume']:
+        if c not in preds_df.columns and c in processed_df.columns:
+            preds_df[c] = processed_df[c]
 
-        # Prepare features
-        X = df.drop(columns=["target"], errors="ignore")
-        X_scaled = scaler.transform(X)
+    # --- final cleanup & save
+    os.makedirs(PREDICTIONS_DIR, exist_ok=True)
+    out_path = os.path.join(PREDICTIONS_DIR, "pred_merged.csv")
+    try:
+        preds_df.to_csv(out_path)
+        logger.success(f"📁 Saved predictions → {out_path}")
+    except Exception as e:
+        logger.warning(f"Could not save predictions to {out_path}: {e}")
 
-        # Predict probabilities or classes
-        y_pred = model.predict(X_scaled)
-        if hasattr(model, "predict_proba"):
-            y_prob = model.predict_proba(X_scaled)[:, 1]
-            df["pred_proba"] = y_prob
-
-        df["prediction"] = y_pred
-        predictions[tf] = df.tail(5)  # keep last few rows for quick view
-
-        logger.info(f"✅ Predictions complete for {tf} (rows={len(df)})")
-
-    # Optionally save predictions
-    output_dir = Path("data/predictions")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    for tf, df in predictions.items():
-        save_path = output_dir / f"pred_{tf}.csv"
-        df.to_csv(save_path, index=False)
-        logger.success(f"📁 Saved predictions → {save_path}")
-
-    logger.success("🎯 All predictions completed successfully.")
-    return predictions
+    # return as dict of timeframes? For compatibility we return DataFrame
+    return preds_df
