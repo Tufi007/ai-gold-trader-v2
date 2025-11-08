@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 
 # =============================
-# ✅ Load Environment
+# ✅ Base & Load environment
 # =============================
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ENV_PATH = BASE_DIR / ".env"
@@ -18,24 +18,32 @@ else:
     logger.info(f"✅ Loaded environment from {ENV_PATH}")
 
 # =============================
-# ✅ Directories
+# ✅ Directories (consistent names)
 # =============================
+# Keep Path objects for convenience elsewhere
 DATA_DIR = BASE_DIR / os.getenv("DATA_DIR", "data")
 RAW_DIR = BASE_DIR / os.getenv("RAW_DIR", "data/raw")
 PROCESSED_DIR = BASE_DIR / os.getenv("PROCESSED_DIR", "data/processed")
 MODELS_DIR = BASE_DIR / os.getenv("MODELS_DIR", "models")
 LOGS_DIR = BASE_DIR / os.getenv("LOGS_DIR", "logs")
-PREDICTIONS_DIR = BASE_DIR / os.getenv("PREDICTIONS_DIR", "predictions")  # ✅ Added
+PREDICTIONS_DIR = BASE_DIR / os.getenv("PREDICTIONS_DIR", "predictions")
 
 for d in [DATA_DIR, RAW_DIR, PROCESSED_DIR, MODELS_DIR, LOGS_DIR, PREDICTIONS_DIR]:
-    d.mkdir(parents=True, exist_ok=True)
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        logger.warning(f"Could not create dir {d}: {e}")
 
+# Also provide str aliases for legacy imports (if any code expects string paths)
+DATA_DIR_STR = str(DATA_DIR)
+RAW_DIR_STR = str(RAW_DIR)
+PROCESSED_DIR_STR = str(PROCESSED_DIR)
 
 # =============================
 # ✅ Trading Configuration
 # =============================
-BASE_SYMBOL = os.getenv("BASE_SYMBOL", "XAUUSD")
-TIMEFRAMES = [t.strip() for t in os.getenv("TIMEFRAMES", "5m,15m,1h,4h,1d").split(",")]
+BASE_SYMBOL = os.getenv("BASE_SYMBOL", "XAUUSD=X")
+TIMEFRAMES = [t.strip() for t in os.getenv("TIMEFRAMES", "5m,15m,30m,1h,4h,1d").split(",")]
 MIN_ROWS = int(os.getenv("MIN_ROWS", "2000"))
 
 # =============================
@@ -48,10 +56,10 @@ MT5_TERMINAL_PATH = os.getenv("MT5_TERMINAL_PATH", "")
 MT5_ENABLED = all([MT5_ACCOUNT, MT5_PASSWORD, MT5_SERVER, MT5_TERMINAL_PATH])
 
 # =============================
-# ✅ TradingView
+# ✅ TradingView credentials (optional)
 # =============================
-TRADINGVIEW_USERNAME = os.getenv("TRADINGVIEW_USERNAME", "")
-TRADINGVIEW_PASSWORD = os.getenv("TRADINGVIEW_PASSWORD", "")
+TRADINGVIEW_USERNAME = os.getenv("TV_USER", "")
+TRADINGVIEW_PASSWORD = os.getenv("TV_PASS", "")
 
 # =============================
 # ✅ Telegram
@@ -61,13 +69,11 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 # =============================
-# ✅ AI Model Configuration
+# ✅ ML/Model config
 # =============================
 USE_TRANSFORMER_FOR_NEWS = os.getenv("USE_TRANSFORMER_FOR_NEWS", "false").lower() == "true"
 TRANSFORMER_MODEL_NAME = os.getenv("TRANSFORMER_MODEL_NAME", "yjernite/distilroberta-base-sentiment")
-
-# For ML/AI models (Torch / XGB / Sklearn)
-MODEL_BACKEND = os.getenv("MODEL_BACKEND", "xgboost")  # options: xgboost, torch, hybrid
+MODEL_BACKEND = os.getenv("MODEL_BACKEND", "xgboost")
 USE_CUDA = torch.cuda.is_available()
 
 # =============================
@@ -86,21 +92,21 @@ ATR_PERIOD = int(os.getenv("ATR_PERIOD", "14"))
 # =============================
 def validate_env():
     if not TRADINGVIEW_USERNAME or not TRADINGVIEW_PASSWORD:
-        logger.warning("⚠️ TradingView credentials missing. Limited data access.")
+        logger.warning("⚠️ TradingView credentials missing. Using no-login mode for tvDatafeed (if used).")
     if not MT5_ENABLED:
         logger.warning("⚠️ MT5 not configured — fallback to TradingView/YFinance.")
     if USE_CUDA:
         logger.success("✅ CUDA GPU detected and active.")
     else:
         logger.warning("⚠️ CUDA not active. Running on CPU.")
-
     logger.success("✅ Environment validated successfully.")
 
 validate_env()
 
 __all__ = [
+    "BASE_DIR", "DATA_DIR", "RAW_DIR", "PROCESSED_DIR", "MODELS_DIR", "LOGS_DIR", "PREDICTIONS_DIR",
+    "DATA_DIR_STR", "RAW_DIR_STR", "PROCESSED_DIR_STR",
     "BASE_SYMBOL", "TIMEFRAMES", "MIN_ROWS",
-    "DATA_DIR", "RAW_DIR", "PROCESSED_DIR", "MODELS_DIR", "LOGS_DIR", "PREDICTIONS_DIR",  # ✅ Added
     "MT5_ACCOUNT", "MT5_PASSWORD", "MT5_SERVER", "MT5_TERMINAL_PATH", "MT5_ENABLED",
     "TRADINGVIEW_USERNAME", "TRADINGVIEW_PASSWORD",
     "TELEGRAM_NOTIFY", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID",
@@ -109,4 +115,3 @@ __all__ = [
     "ACCOUNT_BALANCE", "TRADE_RISK_PCT", "SL_ATR_MULT", "TP_ATR_MULT",
     "THR_LONG", "THR_SHORT", "ATR_PERIOD"
 ]
-
